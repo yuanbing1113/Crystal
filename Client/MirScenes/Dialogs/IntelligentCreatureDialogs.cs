@@ -1,4 +1,4 @@
-﻿using Client.MirControls;
+using Client.MirControls;
 using Client.MirGraphics;
 using Client.MirNetwork;
 using Client.MirSounds;
@@ -1368,6 +1368,12 @@ namespace Client.MirScenes.Dialogs
                     return Color.Plum;
                 case ItemGrade.Heroic:
                     return Color.Red;
+                case ItemGrade.Woma:
+                    return Color.Green;
+                case ItemGrade.Zuma:
+                    return Color.Brown;
+                case ItemGrade.Chiyue:
+                    return Color.Purple;
                 default:
                     return Color.White;
             }

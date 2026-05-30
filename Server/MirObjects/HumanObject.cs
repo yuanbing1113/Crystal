@@ -419,7 +419,31 @@ namespace Server.MirObjects
                         break;
                     case BuffType.Skill:
                         skill = true;
-                        if (!SpecialMode.HasFlag(SpecialItemMode.Skill)) buff.FlagForRemoval = true;
+                        if (!SpecialMode.HasFlag(SpecialItemMode.Skill))
+                        {
+                            buff.FlagForRemoval = true;
+                        }
+                        else
+                        {
+                            int currentMultiplier = 3;
+                            for (int k = 0; k < Info.Equipment.Length; k++)
+                            {
+                                UserItem temp = Info.Equipment[k];
+                                if (temp == null) continue;
+                                if (temp.CurrentDura == 0 && temp.Info.Durability > 0) continue;
+                                ItemInfo realItem = Functions.GetRealItem(temp.Info, Info.Level, Info.Class, Envir.ItemInfoList);
+                                if (realItem.Unique.HasFlag(SpecialItemMode.Skill) && realItem.Type == ItemType.Torch)
+                                {
+                                    currentMultiplier = Settings.SkillGainMultiplier;
+                                    break;
+                                }
+                            }
+                            if (buff.Stats[Stat.SkillGainMultiplier] != currentMultiplier)
+                            {
+                                buff.FlagForRemoval = true;
+                                skill = false;
+                            }
+                        }
                         break;
                     case BuffType.GameMaster:
                         gm = true;
@@ -505,7 +529,20 @@ namespace Server.MirObjects
 
             if (SpecialMode.HasFlag(SpecialItemMode.Skill) && !skill)
             {
-                AddBuff(BuffType.Skill, this, 0, new Stats { [Stat.SkillGainMultiplier] = 3 }, false);
+                int currentMultiplier = 3;
+                for (int k = 0; k < Info.Equipment.Length; k++)
+                {
+                    UserItem temp = Info.Equipment[k];
+                    if (temp == null) continue;
+                    if (temp.CurrentDura == 0 && temp.Info.Durability > 0) continue;
+                    ItemInfo realItem = Functions.GetRealItem(temp.Info, Info.Level, Info.Class, Envir.ItemInfoList);
+                    if (realItem.Unique.HasFlag(SpecialItemMode.Skill) && realItem.Type == ItemType.Torch)
+                    {
+                        currentMultiplier = Settings.SkillGainMultiplier;
+                        break;
+                    }
+                }
+                AddBuff(BuffType.Skill, this, 0, new Stats { [Stat.SkillGainMultiplier] = currentMultiplier }, false);
             }
 
             if (Info.Mentor != 0 && !mentor)
@@ -1766,6 +1803,11 @@ namespace Server.MirObjects
             AttackSpeed = 1400 - ((Stats[Stat.AttackSpeed] * 60) + Math.Min(370, (Level * 14)));
 
             if (AttackSpeed < 550) AttackSpeed = 550;
+
+            for (int i = 0; i < Pets.Count; i++)
+            {
+                Pets[i].RefreshAll();
+            }
         }
         public virtual void RefreshGuildBuffs() { }
 
@@ -1970,7 +2012,7 @@ namespace Server.MirObjects
                 {
                     SpecialMode |= RealItem.Unique;
 
-                    if (RealItem.Unique.HasFlag(SpecialItemMode.Skill)) Stats[Stat.SkillGainMultiplier] = 3;
+                    if (RealItem.Unique.HasFlag(SpecialItemMode.Skill)) Stats[Stat.SkillGainMultiplier] = RealItem.Type == ItemType.Torch ? Settings.SkillGainMultiplier : 3;
 
                     if (RealItem.Unique.HasFlag(SpecialItemMode.Flame)) skillsToAdd.Add(Settings.FireRing);
                     if (RealItem.Unique.HasFlag(SpecialItemMode.Healing)) skillsToAdd.Add(Settings.HealRing);
@@ -2509,6 +2551,11 @@ namespace Server.MirObjects
                 }
             }
 
+            if (this is PlayerObject player && Settings.AllowAutoPickUp && player.AutoPickUp)
+            {
+                player.PickUp(true);
+            }
+
             return true;
         }
         public bool Run(MirDirection dir)
@@ -2639,6 +2686,11 @@ namespace Server.MirObjects
                     ob.ProcessSpell(this);
                     //break;
                 }
+            }
+
+            if (this is PlayerObject player && Settings.AllowAutoPickUp && player.AutoPickUp)
+            {
+                player.PickUp(true);
             }
 
             return true;
@@ -4281,14 +4333,14 @@ namespace Server.MirObjects
             for (int i = 0; i < Pets.Count; i++)
             {
                 monster = Pets[i];
-                if ((monster.Info.Name != Settings.CloneName) || monster.Dead) continue;
+                if ((monster.Info.Name != Settings.CloneName && monster.Info.AI != 55) || monster.Dead) continue;
                 if (monster.Node == null) continue;
                 action = new DelayedAction(DelayedType.Magic, Envir.Time + 500, this, magic, monster, Front, true);
                 CurrentMap.ActionList.Add(action);
                 return;
             }
 
-            MonsterInfo info = Envir.GetMonsterInfo(Settings.CloneName);
+            MonsterInfo info = Envir.GetMonsterInfo(Settings.CloneName) ?? Envir.GetMonsterInfo(55, -1);
             if (info == null) return;
 
             LevelMagic(magic);
@@ -4408,9 +4460,10 @@ namespace Server.MirObjects
             for (int i = 0; i < Pets.Count; i++)
             {
                 monster = Pets[i];
-                if ((monster.Info.Name != Settings.SkeletonName) || monster.Dead) continue;
+                if ((monster.Info.Name != Settings.SkeletonName && monster.Info.AI != 23) || monster.Dead) continue;
                 if (monster.Node == null) continue;
                 monster.ActionList.Add(new DelayedAction(DelayedType.Recall, Envir.Time + 500));
+                monster.SetOperateTime();
                 return;
             }
 
@@ -4419,7 +4472,7 @@ namespace Server.MirObjects
             UserItem item = GetAmulet(1);
             if (item == null) return;
 
-            MonsterInfo info = Envir.GetMonsterInfo(Settings.SkeletonName);
+            MonsterInfo info = Envir.GetMonsterInfo(Settings.SkeletonName) ?? Envir.GetMonsterInfo(23, -1);
             if (info == null) return;
 
             LevelMagic(magic);
@@ -4457,9 +4510,10 @@ namespace Server.MirObjects
             for (int i = 0; i < Pets.Count; i++)
             {
                 monster = Pets[i];
-                if ((monster.Info.Name != Settings.ShinsuName) || monster.Dead) continue;
+                if ((monster.Info.Name != Settings.ShinsuName && monster.Info.AI != 18) || monster.Dead) continue;
                 if (monster.Node == null) continue;
                 monster.ActionList.Add(new DelayedAction(DelayedType.Recall, Envir.Time + 500));
+                monster.SetOperateTime();
                 return;
             }
 
@@ -4468,7 +4522,7 @@ namespace Server.MirObjects
             UserItem item = GetAmulet(5);
             if (item == null) return;
 
-            MonsterInfo info = Envir.GetMonsterInfo(Settings.ShinsuName);
+            MonsterInfo info = Envir.GetMonsterInfo(Settings.ShinsuName) ?? Envir.GetMonsterInfo(18, -1);
             if (info == null) return;
 
             LevelMagic(magic);
@@ -4708,9 +4762,10 @@ namespace Server.MirObjects
             for (int i = 0; i < Pets.Count; i++)
             {
                 monster = Pets[i];
-                if ((monster.Info.Name != Settings.AngelName) || monster.Dead) continue;
+                if ((monster.Info.Name != Settings.AngelName && monster.Info.AI != 38) || monster.Dead) continue;
                 if (monster.Node == null) continue;
                 monster.ActionList.Add(new DelayedAction(DelayedType.Recall, Envir.Time + 500));
+                monster.SetOperateTime();
                 return;
             }
 
@@ -4719,7 +4774,7 @@ namespace Server.MirObjects
             UserItem item = GetAmulet(2);
             if (item == null) return;
 
-            MonsterInfo info = Envir.GetMonsterInfo(Settings.AngelName);
+            MonsterInfo info = Envir.GetMonsterInfo(Settings.AngelName) ?? Envir.GetMonsterInfo(38, -1);
             if (info == null) return;
 
             LevelMagic(magic);
@@ -5334,13 +5389,13 @@ namespace Server.MirObjects
             for (int i = 0; i < Pets.Count; i++)
             {
                 monster = Pets[i];
-                if ((monster.Info.Name != Settings.AssassinCloneName) || monster.Dead) continue;
+                if ((monster.Info.Name != Settings.AssassinCloneName && monster.Info.AI != 59) || monster.Dead) continue;
                 if (monster.Node == null) continue;
                 monster.Die();
                 return;
             }
 
-            MonsterInfo info = Envir.GetMonsterInfo(Settings.AssassinCloneName);
+            MonsterInfo info = Envir.GetMonsterInfo(Settings.AssassinCloneName) ?? Envir.GetMonsterInfo(59, -1);
             if (info == null) return;
 
             monster = MonsterObject.GetMonster(info);
@@ -6685,10 +6740,12 @@ namespace Server.MirObjects
                     for (int i = 0; i < Pets.Count; i++)
                     {
                         monster = Pets[i];
-                        if ((monster.Info.Name != (SummonType == 1 ? Settings.VampireName : (SummonType == 2 ? Settings.ToadName : Settings.SnakeTotemName))) || monster.Dead) continue;
+                        if ((monster.Info.Name != (SummonType == 1 ? Settings.VampireName : (SummonType == 2 ? Settings.ToadName : Settings.SnakeTotemName)) &&
+                             monster.Info.AI != (SummonType == 1 ? 60 : (SummonType == 2 ? 61 : 62))) || monster.Dead) continue;
                         if (monster.Node == null) continue;
                         monster.ActionList.Add(new DelayedAction(DelayedType.Recall, Envir.Time + 500, target));
                         monster.Target = target;
+                        monster.SetOperateTime();
                         return;
                     }
 
@@ -6698,7 +6755,8 @@ namespace Server.MirObjects
                     //UserItem item = GetAmulet(5);
                     //if (item == null) return;
 
-                    MonsterInfo info = Envir.GetMonsterInfo((SummonType == 1 ? Settings.VampireName : (SummonType == 2 ? Settings.ToadName : Settings.SnakeTotemName)));
+                    MonsterInfo info = Envir.GetMonsterInfo((SummonType == 1 ? Settings.VampireName : (SummonType == 2 ? Settings.ToadName : Settings.SnakeTotemName))) ??
+                                       Envir.GetMonsterInfo(SummonType == 1 ? 60 : (SummonType == 2 ? 61 : 62), -1);
                     if (info == null) return;
 
                     LevelMagic(magic);

@@ -234,6 +234,9 @@ public enum ClientTextKeys
     ItemGradeLegendary,
     ItemGradeMythical,
     ItemGradeHeroic,
+    ItemGradeWoma,
+    ItemGradeZuma,
+    ItemGradeChiyue,
     NoAccountID,
     IncorrectPasswordAccountID,
     GroupSwitch,
@@ -2955,6 +2958,9 @@ public static class GameLanguage
             { nameof(ClientTextKeys.ItemGradeLegendary), "Legendary" },
             { nameof(ClientTextKeys.ItemGradeMythical), "Mythical" },
             { nameof(ClientTextKeys.ItemGradeHeroic), "Heroic" },
+            { nameof(ClientTextKeys.ItemGradeWoma), "Woma" },
+            { nameof(ClientTextKeys.ItemGradeZuma), "Zuma" },
+            { nameof(ClientTextKeys.ItemGradeChiyue), "Chiyue" },
             { nameof(ClientTextKeys.NoAccountID), "The AccountID does not exist." },
             { nameof(ClientTextKeys.IncorrectPasswordAccountID), "Incorrect Password and AccountID combination." },
             { nameof(ClientTextKeys.GroupSwitch), "Allow/Disallow Group Requests" },
@@ -4114,7 +4120,8 @@ public static class GameLanguage
         typeof(PoisonType),
         typeof(AwakeType),
         typeof(MonsterType),
-        typeof(HeroBehaviour)
+        typeof(HeroBehaviour),
+        typeof(Spell)
     ];
 
     static GameLanguage()

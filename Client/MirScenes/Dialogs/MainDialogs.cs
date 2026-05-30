@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using Client.MirControls;
 using Client.MirGraphics;
 using Client.MirNetwork;
@@ -1692,7 +1692,7 @@ namespace Client.MirScenes.Dialogs
                     //string key = m.Key > 8 ? string.Format("CTRL F{0}", i) : string.Format("F{0}", m.Key);
 
                     Cells[i - 1].Index = magic.Icon * 2;
-                    Cells[i - 1].Hint = GameLanguage.ClientTextMap.GetLocalization((ClientTextKeys.SkillMpCooldownKey), magic.Name,
+                    Cells[i - 1].Hint = GameLanguage.ClientTextMap.GetLocalization((ClientTextKeys.SkillMpCooldownKey), magic.Spell.ToLocalizedString(),
                         (magic.BaseCost + (magic.LevelCost * magic.Level)), Functions.PrintTimeSpanFromMilliSeconds(magic.Delay), key);
 
                     KeyNameLabels[i - 1].Text = "";
@@ -3400,7 +3400,7 @@ namespace Client.MirScenes.Dialogs
         {
             Magic = magic;
 
-            NameLabel.Text = Magic.Name;
+            NameLabel.Text = Magic.Spell.ToLocalizedString();
 
             LevelLabel.Text = Magic.Level.ToString();
             switch (Magic.Level)
@@ -3820,7 +3820,7 @@ namespace Client.MirScenes.Dialogs
                 Parent = this,
                 Size = new Size(230, 32),
                 DrawFormat = TextFormatFlags.HorizontalCenter | TextFormatFlags.WordBreak,
-                Text = GameLanguage.ClientTextMap.GetLocalization((ClientTextKeys.SelectKey), magic.Name)
+                Text = GameLanguage.ClientTextMap.GetLocalization((ClientTextKeys.SelectKey), magic.Spell.ToLocalizedString())
             };
 
             NoneButton = new MirButton

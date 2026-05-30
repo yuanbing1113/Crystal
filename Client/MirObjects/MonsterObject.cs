@@ -1,4 +1,4 @@
-﻿using Client.MirGraphics;
+using Client.MirGraphics;
 using Client.MirScenes;
 using Client.MirSounds;
 using S = ServerPackets;
@@ -508,7 +508,7 @@ namespace Client.MirObjects
                 CurrentAction = Stoned ? MirAction.Stoned : MirAction.Standing;
                 if (CurrentAction == MirAction.Standing) CurrentAction = SitDown ? MirAction.SitDown : MirAction.Standing;
 
-                Frames.TryGetValue(CurrentAction, out Frame);
+                TryGetFrame(CurrentAction, out Frame);
 
                 if (MapLocation != CurrentLocation)
                 {
@@ -519,6 +519,10 @@ namespace Client.MirObjects
 
                 FrameIndex = 0;
 
+                if (Frame == null)
+                {
+                    TryGetFrame(MirAction.Standing, out Frame);
+                }
                 if (Frame == null) return false;
 
                 FrameInterval = Frame.Interval;
@@ -564,33 +568,33 @@ namespace Client.MirObjects
                 switch (CurrentAction)
                 {
                     case MirAction.Pushed:
-                        Frames.TryGetValue(MirAction.Walking, out Frame);
+                        TryGetFrame(MirAction.Walking, out Frame);
                         break;
                     case MirAction.Jump:
-                        Frames.TryGetValue(MirAction.Jump, out Frame);
+                        TryGetFrame(MirAction.Jump, out Frame);
                         break;
                     case MirAction.DashAttack:
-                        Frames.TryGetValue(MirAction.DashAttack, out Frame);
+                        TryGetFrame(MirAction.DashAttack, out Frame);
                         break;
                     case MirAction.AttackRange1:
-                        if (!Frames.TryGetValue(CurrentAction, out Frame))
-                            Frames.TryGetValue(MirAction.Attack1, out Frame);
+                        if (!TryGetFrame(CurrentAction, out Frame))
+                            TryGetFrame(MirAction.Attack1, out Frame);
                         break;
                     case MirAction.AttackRange2:
-                        if (!Frames.TryGetValue(CurrentAction, out Frame))
-                            Frames.TryGetValue(MirAction.Attack2, out Frame);
+                        if (!TryGetFrame(CurrentAction, out Frame))
+                            TryGetFrame(MirAction.Attack2, out Frame);
                         break;
                     case MirAction.AttackRange3:
-                        if (!Frames.TryGetValue(CurrentAction, out Frame))
-                            Frames.TryGetValue(MirAction.Attack3, out Frame);
+                        if (!TryGetFrame(CurrentAction, out Frame))
+                            TryGetFrame(MirAction.Attack3, out Frame);
                         break;
                     case MirAction.Special:
-                        if (!Frames.TryGetValue(CurrentAction, out Frame))
-                            Frames.TryGetValue(MirAction.Attack1, out Frame);
+                        if (!TryGetFrame(CurrentAction, out Frame))
+                            TryGetFrame(MirAction.Attack1, out Frame);
                         break;
                     case MirAction.Skeleton:
-                        if (!Frames.TryGetValue(CurrentAction, out Frame))
-                            Frames.TryGetValue(MirAction.Dead, out Frame);
+                        if (!TryGetFrame(CurrentAction, out Frame))
+                            TryGetFrame(MirAction.Dead, out Frame);
                         break;
                     case MirAction.Hide:
                         switch (BaseImage)
@@ -600,10 +604,10 @@ namespace Client.MirObjects
                                 BaseImage = Monster.Shinsu;
                                 BaseSound = (ushort)BaseImage * 10;
                                 Frames = BodyLibrary.Frames ?? FrameSet.DefaultMonster;
-                                Frames.TryGetValue(CurrentAction, out Frame);
+                                TryGetFrame(CurrentAction, out Frame);
                                 break;
                             default:
-                                Frames.TryGetValue(CurrentAction, out Frame);
+                                TryGetFrame(CurrentAction, out Frame);
                                 break;
                         }
                         break;
@@ -625,18 +629,22 @@ namespace Client.MirObjects
                                 Remove();
                                 return false;
                             default:
-                                Frames.TryGetValue(CurrentAction, out Frame);
+                                TryGetFrame(CurrentAction, out Frame);
                                 break;
                         }
                         break;
                     default:
-                        Frames.TryGetValue(CurrentAction, out Frame);
+                        TryGetFrame(CurrentAction, out Frame);
                         break;
 
                 }
 
                 FrameIndex = 0;
 
+                if (Frame == null)
+                {
+                    TryGetFrame(MirAction.Standing, out Frame);
+                }
                 if (Frame == null) return false;
 
                 FrameInterval = Frame.Interval;
@@ -5708,6 +5716,27 @@ namespace Client.MirObjects
             ChatLabel.ForeColour = Dead ? Color.Gray : Color.White;
             ChatLabel.Location = new Point(DisplayRectangle.X + (48 - ChatLabel.Size.Width) / 2, DisplayRectangle.Y - (60 + ChatLabel.Size.Height) - (Dead ? 35 : 0) + yOffset);
             ChatLabel.Draw();
+        }
+
+        private bool IsFrameInBounds(Frame f)
+        {
+            if (f == null) return false;
+            if (BodyLibrary == null) return true;
+            int maxIndex = f.Start + (f.OffSet * 7) + f.Count;
+            return maxIndex <= BodyLibrary.ImageCount;
+        }
+
+        public bool TryGetFrame(MirAction action, out Frame frame)
+        {
+            if (Frames != null && Frames.TryGetValue(action, out frame) && IsFrameInBounds(frame))
+                return true;
+
+            // Fallback to DefaultMonster if custom frame is not defined or out of bounds
+            if (FrameSet.DefaultMonster.TryGetValue(action, out frame) && IsFrameInBounds(frame))
+                return true;
+
+            frame = null;
+            return false;
         }
     }
 }

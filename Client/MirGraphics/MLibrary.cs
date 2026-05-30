@@ -1,4 +1,4 @@
-﻿using SlimDX;
+using SlimDX;
 using SlimDX.Direct3D9;
 using System.IO.Compression;
 using Frame = Client.MirObjects.Frame;
@@ -492,6 +492,15 @@ namespace Client.MirGraphics
         public FrameSet Frames
         {
             get { return _frames; }
+        }
+
+        public int ImageCount
+        {
+            get
+            {
+                if (!_initialized) Initialize();
+                return _count;
+            }
         }
 
         public MLibrary(string filename)

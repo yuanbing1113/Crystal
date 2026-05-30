@@ -69,7 +69,7 @@ namespace Server.MirEnvir
         public static int LoadVersion;
         public static int LoadCustomVersion;
 
-        private readonly DateTime _startTime = DateTime.UtcNow;
+        private readonly DateTime _startTime = DateTime.Now;
         public readonly Stopwatch Stopwatch = Stopwatch.StartNew();
 
         public long Time { get; private set; }
@@ -198,7 +198,7 @@ namespace Server.MirEnvir
         public int MonsterCount;
 
         private long warTime, guildTime, conquestTime, rentalItemsTime, auctionTime, spawnTime, robotTime, timerTime;
-        private int dailyTime = DateTime.UtcNow.Day;
+        private int dailyTime = DateTime.Now.Day;
         private bool MagicExists(Spell spell)
         {
             for (var i = 0; i < MagicInfoList.Count; i++)
@@ -2291,12 +2291,15 @@ namespace Server.MirEnvir
         {
             var oldLights = Lights;
 
-            var hours = Now.Hour * 2 % 24;
+            // Use China Standard Time (UTC+8) to align daylight cycle with China timezone
+            var chinaTime = DateTime.UtcNow.AddHours(8);
+            var hours = chinaTime.Hour;
+
             if (hours == 6 || hours == 7)
                 Lights = LightSetting.Dawn;
-            else if (hours >= 8 && hours <= 15)
+            else if (hours >= 8 && hours <= 17)
                 Lights = LightSetting.Day;
-            else if (hours == 16 || hours == 17)
+            else if (hours == 18 || hours == 19)
                 Lights = LightSetting.Evening;
             else
                 Lights = LightSetting.Night;
@@ -2862,6 +2865,38 @@ namespace Server.MirEnvir
                     MapInfoList.Clear();
                     for (var i = 0; i < count; i++)
                         MapInfoList.Add(new MapInfo(reader));
+
+                    try
+                    {
+                        string transPath = Path.Combine(".", "Localization", "MapTranslations.txt");
+                        if (File.Exists(transPath))
+                        {
+                            var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                            foreach (var line in File.ReadAllLines(transPath))
+                            {
+                                if (string.IsNullOrWhiteSpace(line)) continue;
+                                int eqIdx = line.IndexOf('=');
+                                if (eqIdx > 0)
+                                {
+                                    string key = line.Substring(0, eqIdx).Trim();
+                                    string val = line.Substring(eqIdx + 1).Trim();
+                                    if (!dict.ContainsKey(key))
+                                    {
+                                        dict[key] = val;
+                                    }
+                                }
+                            }
+
+                            foreach (var map in MapInfoList)
+                            {
+                                if (dict.TryGetValue(map.Title, out var chineseTitle))
+                                {
+                                    map.Title = chineseTitle;
+                                }
+                            }
+                        }
+                    }
+                    catch { }
 
                     count = reader.ReadInt32();
                     ItemInfoList.Clear();
@@ -4668,6 +4703,24 @@ namespace Server.MirEnvir
         }
 
         public MonsterInfo GetMonsterInfo(string name, bool Strict = false)
+        {
+            string translatedName = name;
+            if (MonsterMap.EnglishToChineseMonsterNames.TryGetValue(name, out string cnName))
+            {
+                translatedName = cnName;
+            }
+
+            MonsterInfo info = GetMonsterInfoInternal(translatedName, Strict);
+            if (info != null) return info;
+
+            if (translatedName != name)
+            {
+                info = GetMonsterInfoInternal(name, Strict);
+            }
+            return info;
+        }
+
+        private MonsterInfo GetMonsterInfoInternal(string name, bool Strict)
         {
             for (var i = 0; i < MonsterInfoList.Count; i++)
             {

@@ -1,4 +1,4 @@
-﻿public enum MouseCursor : byte
+public enum MouseCursor : byte
 {
     None,
     Default,
@@ -143,6 +143,9 @@ public enum ItemGrade : byte
     Legendary = 3,
     Mythical = 4,
     Heroic = 5,
+    Woma = 6,
+    Zuma = 7,
+    Chiyue = 8,
 }
 
 

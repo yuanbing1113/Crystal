@@ -16,6 +16,7 @@ namespace Server.MirObjects
 
         public string GMPassword = Settings.GMPassword;
         public bool GMLogin, EnableGroupRecall, EnableGuildInvite, AllowMarriage, AllowLoverRecall, AllowMentor, HasMapShout, HasServerShout; //TODO - Remove        
+        public bool AutoPickUp = true;
 
         public long LastRecallTime, LastTeleportTime, LastProbeTime;
         public long NextMailTime;
@@ -261,6 +262,7 @@ namespace Server.MirObjects
             }
 
             Info.LastLoginDate = Envir.Now;
+            EnableGuildInvite = true;
         }
 
         public void StopGame(byte reason)
@@ -323,7 +325,7 @@ namespace Server.MirObjects
                             {
                                 case (MirClass.Wizard):
 
-                                    if (pet.Name == Settings.CloneName)
+                                    if (pet.Name == Settings.CloneName || pet.Info.AI == 55)
                                     {
                                         Info.Pets.Add(new PetInfo(pet));
                                     }
@@ -338,7 +340,8 @@ namespace Server.MirObjects
                                     break;
 
                                 case (MirClass.Taoist):
-                                    if (pet.Name == Settings.SkeletonName || pet.Name == Settings.AngelName || pet.Name == Settings.ShinsuName)
+                                    if (pet.Name == Settings.SkeletonName || pet.Name == Settings.AngelName || pet.Name == Settings.ShinsuName ||
+                                        pet.Info.AI == 23 || pet.Info.AI == 38 || pet.Info.AI == 18)
                                         Info.Pets.Add(new PetInfo(pet));
 
                                     break;
@@ -1249,7 +1252,7 @@ namespace Server.MirObjects
                 switch (Settings.PetSave)
                 {
                     case true when Settings.PetSave is true:
-                        if (monster.Info.Name == Settings.CloneName)
+                        if (monster.Info.Name == Settings.CloneName || monster.Info.AI == 55)
                         {
                             monster.ActionTime = Envir.Time + 1000;
                             monster.RefreshNameColour(false);
@@ -1260,7 +1263,7 @@ namespace Server.MirObjects
                         switch (Class)
                         {
                             case (MirClass.Wizard):
-                                if (monster.Info.Name == Settings.CloneName)
+                                if (monster.Info.Name == Settings.CloneName || monster.Info.AI == 55)
                                 {
                                     monster.ActionTime = Envir.Time + 1000;
                                     monster.RefreshNameColour(false);
@@ -1489,6 +1492,14 @@ namespace Server.MirObjects
             }
 
             GetPlayerLocation();
+
+            for (int i = 0; i < Pets.Count; i++)
+            {
+                MonsterObject pet = Pets[i];
+                if (pet.Dead) continue;
+                pet.PetRecall();
+                pet.SetOperateTime();
+            }
 
 
             if (MapHasGroupRequirement(CurrentMap) && !IsValidForGroupRequiredMap())
@@ -3313,6 +3324,20 @@ namespace Server.MirObjects
                             ReceiveChat(GameLanguage.ServerTextMap.GetLocalization(ServerTextKeys.AllowTradeNow), ChatType.System);
                         else
                             ReceiveChat(GameLanguage.ServerTextMap.GetLocalization(ServerTextKeys.NoLongerAllowTrade), ChatType.System);
+                        break;
+
+                    case "AUTOPICKUP":
+                    case "自动拾取":
+                        if (!Settings.AllowAutoPickUp)
+                        {
+                            ReceiveChat("当前服务器已禁用自动拾取功能。 (Auto-pickup is disabled by the server.)", ChatType.System);
+                            break;
+                        }
+                        AutoPickUp = !AutoPickUp;
+                        if (AutoPickUp)
+                            ReceiveChat("自动拾取已开启。 (Auto-pickup enabled.)", ChatType.Hint);
+                        else
+                            ReceiveChat("自动拾取已关闭。 (Auto-pickup disabled.)", ChatType.Hint);
                         break;
 
                     case "TRIGGER":
@@ -7480,7 +7505,7 @@ namespace Server.MirObjects
             Account.Gold -= gold;
             Enqueue(new S.LoseGold { Gold = gold });
         }
-        public void PickUp()
+        public void PickUp(bool auto = false)
         {
             if (Dead)
             {
@@ -7489,49 +7514,58 @@ namespace Server.MirObjects
             }
 
             Cell cell = CurrentMap.GetCell(CurrentLocation);
+            if (cell == null || cell.Objects == null) return;
 
             bool sendFail = false;
+            bool pickedUp;
 
-            for (int i = 0; i < cell.Objects.Count; i++)
+            do
             {
-                MapObject ob = cell.Objects[i];
-
-                if (ob.Race != ObjectType.Item) continue;
-
-                if (ob.Owner != null && ob.Owner != this && !IsGroupMember(ob.Owner)) //Or Group member.
+                pickedUp = false;
+                for (int i = 0; i < cell.Objects.Count; i++)
                 {
-                    sendFail = true;
-                    continue;
-                }
-                ItemObject item = (ItemObject)ob;
+                    MapObject ob = cell.Objects[i];
 
-                if (item.Item != null)
-                {
-                    if (!CanGainItem(item.Item)) continue;
+                    if (ob.Race != ObjectType.Item) continue;
 
-                    if (item.Item.Info.ShowGroupPickup && IsGroupMember(this))
-                        for (int j = 0; j < GroupMembers.Count; j++)
-                            GroupMembers[j].ReceiveChat(GameLanguage.ServerTextMap.GetLocalization((ServerTextKeys.PickedUpItem), Name, item.Item.FriendlyName), ChatType.System);
+                    if (ob.Owner != null && ob.Owner != this && !IsGroupMember(ob.Owner)) //Or Group member.
+                    {
+                        sendFail = true;
+                        continue;
+                    }
+                    ItemObject item = (ItemObject)ob;
 
-                    GainItem(item.Item);
+                    if (item.Item != null)
+                    {
+                        if (!CanGainItem(item.Item)) continue;
 
-                    Report.ItemChanged(item.Item, item.Item.Count, 2);
+                        if (item.Item.Info.ShowGroupPickup && IsGroupMember(this))
+                            for (int j = 0; j < GroupMembers.Count; j++)
+                                GroupMembers[j].ReceiveChat(GameLanguage.ServerTextMap.GetLocalization((ServerTextKeys.PickedUpItem), Name, item.Item.FriendlyName), ChatType.System);
 
+                        GainItem(item.Item);
+
+                        Report.ItemChanged(item.Item, item.Item.Count, 2);
+
+                        CurrentMap.RemoveObject(ob);
+                        ob.Despawn();
+
+                        pickedUp = true;
+                        break;
+                    }
+
+                    if (!CanGainGold(item.Gold)) continue;
+
+                    GainGold(item.Gold);
                     CurrentMap.RemoveObject(ob);
                     ob.Despawn();
-
-                    return;
+                    
+                    pickedUp = true;
+                    break;
                 }
+            } while (pickedUp);
 
-                if (!CanGainGold(item.Gold)) continue;
-
-                GainGold(item.Gold);
-                CurrentMap.RemoveObject(ob);
-                ob.Despawn();
-                return;
-            }
-
-            if (sendFail)
+            if (sendFail && !auto)
                 ReceiveChat(GameLanguage.ServerTextMap.GetLocalization(ServerTextKeys.CannotPickupNotOwner), ChatType.System);
 
         }

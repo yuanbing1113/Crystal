@@ -117,6 +117,10 @@ namespace Server.MirDatabase
 
             CreationIP = c.IPAddress;
             CreationDate = Envir.Now;
+
+            AllowTrade = true;
+            AllowGroup = true;
+            AllowObserve = true;
         }
 
         public CharacterInfo(BinaryReader reader, int version, int customVersion)

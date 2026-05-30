@@ -820,8 +820,14 @@ namespace Server.MirObjects
             Stats[Stat.MinDC] += PetLevel;
             Stats[Stat.MaxDC] += PetLevel;
 
-            if (Info.Name == Settings.SkeletonName || Info.Name == Settings.ShinsuName || Info.Name == Settings.AngelName)
+            if (Info.Name == Settings.SkeletonName || Info.Name == Settings.ShinsuName || Info.Name == Settings.AngelName || Info.AI == 23 || Info.AI == 18 || Info.AI == 38)
             {
+                if (Master != null)
+                {
+                    Stats[Stat.MinDC] += Master.Stats[Stat.MinSC] / 2;
+                    Stats[Stat.MaxDC] += Master.Stats[Stat.MaxSC] / 2;
+                }
+
                 MoveSpeed = (ushort)Math.Min(ushort.MaxValue, (Math.Max(ushort.MinValue, MoveSpeed - MaxPetLevel * 130)));
                 AttackSpeed = (ushort)Math.Min(ushort.MaxValue, (Math.Max(ushort.MinValue, AttackSpeed - MaxPetLevel * 70)));
             }
@@ -1160,7 +1166,7 @@ namespace Server.MirObjects
 
             foreach (var player in Envir.Players)
             {
-                player.ReceiveChat(GameLanguage.ServerTextMap.GetLocalization((ServerTextKeys.PlayerHasDroppedItem), Name, item.FriendlyName), ChatType.System2);
+                player.ReceiveChat(string.Format("【系统公告】: 传闻在 [{0}]，[{1}] 掉落了珍稀装备: [{2}]！", CurrentMap.Info.Title, Name, item.FriendlyName), ChatType.System2);
             }
 
             return ob.Drop(Settings.DropRange);
@@ -1361,7 +1367,7 @@ namespace Server.MirObjects
             PMode = PetMode.Both;
 
             // Only teleport if needed
-            if (CurrentMap != Master.CurrentMap)
+            if (CurrentMap != Master.CurrentMap || !Functions.InRange(CurrentLocation, Master.CurrentLocation, 2))
             {
                 if (!Teleport(Master.CurrentMap, Master.Back))
                     Teleport(Master.CurrentMap, Master.CurrentLocation);
@@ -1676,6 +1682,11 @@ namespace Server.MirObjects
             {
                 Die();
                 return;
+            }
+
+            if (Target != null && Target.Dead)
+            {
+                Target = null;
             }
 
             if (Master != null && Master.CurrentMap != null)
@@ -2523,6 +2534,9 @@ namespace Server.MirObjects
             {
                 if (Envir.Time < ShockTime) //Shocked
                     return false;
+
+                if (attacker.Master.Target == this || LastHitter == attacker.Master)
+                    return true;
 
                 for (int i = 0; i < attacker.Master.Pets.Count; i++)
                 {
@@ -3503,7 +3517,7 @@ namespace Server.MirObjects
         {
             if (PetLevel >= MaxPetLevel) return;
 
-            if (Info.Name == Settings.SkeletonName || Info.Name == Settings.ShinsuName || Info.Name == Settings.AngelName)
+            if (Info.Name == Settings.SkeletonName || Info.Name == Settings.ShinsuName || Info.Name == Settings.AngelName || Info.AI == 23 || Info.AI == 18 || Info.AI == 38)
                 amount *= 3;
 
             PetExperience += amount;

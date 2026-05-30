@@ -1,4 +1,4 @@
-﻿using Server.MirEnvir;
+using Server.MirEnvir;
 
 namespace Server.MirForms.DropBuilder
 {
@@ -710,7 +710,7 @@ namespace Server.MirForms.DropBuilder
                 {
                     if (lines[i + 1].StartsWith("1/"))
                     {
-                        var workingLine = lines[i + 1].Split(' ');
+                        var workingLine = lines[i + 1].Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
                         GoldOdds = workingLine[0].Remove(0,2);
                         Gold = workingLine[2];
                         break;
@@ -774,7 +774,7 @@ namespace Server.MirForms.DropBuilder
                         {
                             if (lines[k].StartsWith(";")) break;
 
-                            var workingLine = lines[k].Split(' ');
+                            var workingLine = lines[k].Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
                             if (workingLine.Length < 2) continue;
 
                             var quest = "";

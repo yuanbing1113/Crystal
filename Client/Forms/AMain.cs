@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Net;
 using Client;
 using Microsoft.Web.WebView2.Core;

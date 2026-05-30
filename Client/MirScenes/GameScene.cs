@@ -1,4 +1,4 @@
-﻿using Client.MirControls;
+using Client.MirControls;
 using Client.MirGraphics;
 using Client.MirNetwork;
 using Client.MirObjects;
@@ -1000,7 +1000,7 @@ namespace Client.MirScenes
                         if (CMain.Time >= OutputDelay)
                         {
                             OutputDelay = CMain.Time + 1000;
-                            Scene.OutputMessage(GameLanguage.ClientTextMap.GetLocalization((ClientTextKeys.CannotCastForSeconds), magic.Name,
+                            Scene.OutputMessage(GameLanguage.ClientTextMap.GetLocalization((ClientTextKeys.CannotCastForSeconds), magic.Spell.ToLocalizedString(),
                                 ((magic.CastTime + magic.Delay) - CMain.Time - 1) / 1000 + 1));
                         }
 
@@ -5774,8 +5774,7 @@ namespace Client.MirScenes
             MirInputBox inputBox = new MirInputBox(GameLanguage.ClientTextMap.GetLocalization(ClientTextKeys.EnterGuildNameLengthLimit));
             inputBox.InputTextBox.TextBox.KeyPress += (o, e) =>
             {
-                string Allowed = "abcdefghijklmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                if (!Allowed.Contains(e.KeyChar) && e.KeyChar != (char)Keys.Back)
+                if (!char.IsLetterOrDigit(e.KeyChar) && e.KeyChar != '_' && e.KeyChar != (char)Keys.Back)
                     e.Handled = true;
             };
             inputBox.OKButton.Click += (o, e) =>
@@ -6802,6 +6801,12 @@ namespace Client.MirScenes
                     return Color.Plum;
                 case ItemGrade.Heroic:
                     return Color.Red;
+                case ItemGrade.Woma:
+                    return Color.Green;
+                case ItemGrade.Zuma:
+                    return Color.Brown;
+                case ItemGrade.Chiyue:
+                    return Color.Purple;
                 default:
                     return Color.Yellow;
             }
@@ -6858,6 +6863,15 @@ namespace Client.MirScenes
                     break;
                 case ItemGrade.Heroic:
                     GradeString = GameLanguage.ClientTextMap.GetLocalization(ClientTextKeys.ItemGradeHeroic);
+                    break;
+                case ItemGrade.Woma:
+                    GradeString = GameLanguage.ClientTextMap.GetLocalization(ClientTextKeys.ItemGradeWoma);
+                    break;
+                case ItemGrade.Zuma:
+                    GradeString = GameLanguage.ClientTextMap.GetLocalization(ClientTextKeys.ItemGradeZuma);
+                    break;
+                case ItemGrade.Chiyue:
+                    GradeString = GameLanguage.ClientTextMap.GetLocalization(ClientTextKeys.ItemGradeChiyue);
                     break;
             }
             MirLabel nameLabel = new MirLabel
@@ -11786,7 +11800,7 @@ namespace Client.MirScenes
                 if (CMain.Time >= OutputDelay)
                 {
                     OutputDelay = CMain.Time + 1000;
-                    GameScene.Scene.OutputMessage(GameLanguage.ClientTextMap.GetLocalization((ClientTextKeys.CannotCastSpellSeconds), magic.Name,
+                    GameScene.Scene.OutputMessage(GameLanguage.ClientTextMap.GetLocalization((ClientTextKeys.CannotCastSpellSeconds), magic.Spell.ToLocalizedString(),
                         ((magic.CastTime + magic.Delay) - CMain.Time - 1) / 1000 + 1));
                 }
 

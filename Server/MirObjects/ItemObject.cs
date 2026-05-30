@@ -75,6 +75,12 @@ namespace Server.MirObjects
 					NameColour = Color.Plum;
                 if (item.Info.Grade == ItemGrade.Heroic)
                     NameColour = Color.Red;
+                if (item.Info.Grade == ItemGrade.Woma)
+                    NameColour = Color.Green;
+                if (item.Info.Grade == ItemGrade.Zuma)
+                    NameColour = Color.Brown;
+                if (item.Info.Grade == ItemGrade.Chiyue)
+                    NameColour = Color.Purple;
             }
 
 			CurrentMap = dropper.CurrentMap;
@@ -102,6 +108,12 @@ namespace Server.MirObjects
 					NameColour = Color.Plum;
                 if (item.Info.Grade == ItemGrade.Heroic)
                     NameColour = Color.Red;
+                if (item.Info.Grade == ItemGrade.Woma)
+                    NameColour = Color.Green;
+                if (item.Info.Grade == ItemGrade.Zuma)
+                    NameColour = Color.Brown;
+                if (item.Info.Grade == ItemGrade.Chiyue)
+                    NameColour = Color.Purple;
             }
 
             CurrentMap = dropper.CurrentMap;

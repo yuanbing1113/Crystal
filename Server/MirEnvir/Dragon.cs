@@ -68,6 +68,11 @@ namespace Server.MirEnvir
                 MonsterInfo info = Envir.GetMonsterInfo(Info.MonsterName);
                 if (info == null)
                 {
+                    info = Envir.GetMonsterInfo(52); // Fallback: AI 52 is EvilMir
+                }
+
+                if (info == null)
+                {
                     MessageQueue.Enqueue(GameLanguage.ServerTextMap.GetLocalization(ServerTextKeys.FailedLoadDragonBadMonsterName) + Info.MonsterName);
                     return false;
                 }
@@ -96,6 +101,10 @@ namespace Server.MirEnvir
                         }
                     }
                     MonsterInfo bodyinfo = Envir.GetMonsterInfo(Info.BodyName);
+                    if (bodyinfo == null)
+                    {
+                        bodyinfo = Envir.GetMonsterInfo(53); // Fallback: AI 53 is EvilMirBody
+                    }
                     if (bodyinfo != null)
                     {
                         MonsterObject bodymob;

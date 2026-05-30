@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using Server.MirDatabase;
 using Server.MirObjects;
@@ -95,7 +95,8 @@ namespace Server
                            SafeZoneHealing = false,
                            GameMasterEffect = false,
                            GatherOrbsPerLevel = true,
-                           ExpMobLevelDifference = true;
+                           ExpMobLevelDifference = true,
+                           AllowAutoPickUp = true;
         public static int LineMessageTimer = 10;
 
         //Database
@@ -151,6 +152,7 @@ namespace Server
         public static bool PetSave = false;
 
         public static int MaxBossTames = 1;
+        public static int SkillGainMultiplier = 3;
 
         public static int RestedPeriod = 60,
                           RestedBuffLength = 10,
@@ -420,6 +422,7 @@ namespace Server
             ExpMobLevelDifference = Reader.ReadBoolean("Optional", "ExpMobLevelDifference", ExpMobLevelDifference);
             GameMasterEffect = Reader.ReadBoolean("Optional", "GameMasterEffect", GameMasterEffect);
             LineMessageTimer = Reader.ReadInt32("Optional", "LineMessageTimer", LineMessageTimer);
+            AllowAutoPickUp = Reader.ReadBoolean("Optional", "AllowAutoPickUp", AllowAutoPickUp);
 
             //Database
             SaveDelay = Reader.ReadInt32("Database", "SaveDelay", SaveDelay);
@@ -432,6 +435,7 @@ namespace Server
             PlayerDiedItemTimeOut = Reader.ReadInt32("Game", "PlayerDiedItemTimeOut", PlayerDiedItemTimeOut);
             PetSave = Reader.ReadBoolean("Game", "PetSave", PetSave);
             MaxBossTames = Math.Max(0, Reader.ReadInt32("Game", "MaxBossTames", MaxBossTames));
+            SkillGainMultiplier = Math.Max(1, Reader.ReadInt32("Game", "SkillGainMultiplier", SkillGainMultiplier));
             PKDelay = Reader.ReadInt32("Game", "PKDelay", PKDelay);
             MonsterRecallEnabled = Reader.ReadBoolean("Game", "MonsterRecallEnabled", MonsterRecallEnabled);
             MonsterRecallRange = Reader.ReadInt32("Game", "MonsterRecallRange", MonsterRecallRange);
@@ -707,6 +711,7 @@ namespace Server
             Reader.Write("Optional", "ExpMobLevelDifference", ExpMobLevelDifference);
             Reader.Write("Optional", "GameMasterEffect", GameMasterEffect);
             Reader.Write("Optional", "LineMessageTimer", LineMessageTimer);
+            Reader.Write("Optional", "AllowAutoPickUp", AllowAutoPickUp);
 
             //Database
             Reader.Write("Database", "SaveDelay", SaveDelay);
@@ -719,6 +724,7 @@ namespace Server
             Reader.Write("Game", "PlayerDiedItemTimeOut", PlayerDiedItemTimeOut);
             Reader.Write("Game", "PetSave", PetSave);
             Reader.Write("Game", "MaxBossTames", MaxBossTames);
+            Reader.Write("Game", "SkillGainMultiplier", SkillGainMultiplier);
             Reader.Write("Game", "PKDelay", PKDelay);
             Reader.Write("Game", "NewbieGuild", NewbieGuild);
             Reader.Write("Game", "NewbieGuildMaxSize", NewbieGuildMaxSize);

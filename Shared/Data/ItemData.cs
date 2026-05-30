@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 
 public class ItemInfo
 {
@@ -316,7 +316,25 @@ public class UserItem
 
     public int Weight
     {
-        get { return (Info.Type == ItemType.Amulet || Info.Type == ItemType.Bait) ? Info.Weight : Info.Weight * Count; }
+        get
+        {
+            switch (Info.Type)
+            {
+                case ItemType.Amulet:
+                case ItemType.Bait:
+                case ItemType.Potion:
+                case ItemType.Scroll:
+                case ItemType.Quest:
+                case ItemType.CraftingMaterial:
+                case ItemType.Awakening:
+                case ItemType.Script:
+                case ItemType.Food:
+                case ItemType.Fish:
+                    return Info.Weight;
+                default:
+                    return Info.Weight * Count;
+            }
+        }
     }
 
     public string FriendlyName
